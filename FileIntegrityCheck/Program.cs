@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
 
 namespace FileIntegrityCheck
 {
@@ -15,8 +13,21 @@ namespace FileIntegrityCheck
                 {
                     throw new Exception("Invalid input");
                 }
-                
-                
+
+                var fileHandler = new FileHandler();
+
+                var responses = fileHandler.Check(args[1], args[0]);
+
+                foreach (var output in responses.Select(response => response switch
+                {
+                    Response.Ok => response.ToString().ToUpper(),
+                    Response.Fail => response.ToString().ToUpper(),
+                    Response.NotFound => "NOT FOUND",
+                    _ => throw new Exception("Undefined result")
+                }))
+                {
+                    Console.WriteLine(output);
+                }
             }
             catch (Exception e)
             {
