@@ -15,24 +15,35 @@ namespace FileIntegrityCheck
                 }
 
                 var fileHandler = new FileHandler();
+                
+                var pathToInputFile = args[0];
 
-                var responses = fileHandler.Check(args[1], args[0]);
+                var pathToDirectory = args[1];
 
-                foreach (var output in responses.Select(response => response switch
+                var responses = fileHandler.Check(pathToInputFile,pathToDirectory);
+
+                foreach (var response in responses)
                 {
-                    Response.Ok => response.ToString().ToUpper(),
-                    Response.Fail => response.ToString().ToUpper(),
-                    Response.NotFound => "NOT FOUND",
-                    _ => throw new Exception("Undefined result")
-                }))
-                {
-                    Console.WriteLine(output);
+                    var message = GetMessage(response);
+                    
+                    Console.WriteLine(message);
                 }
             }
             catch (Exception e)
             {
                 Console.WriteLine(e.Message);
             }
+        }
+
+        private static string GetMessage(Response response)
+        {
+            return response switch
+            {
+                Response.Ok => response.ToString().ToUpper(),
+                Response.Fail => response.ToString().ToUpper(),
+                Response.NotFound => "NOT FOUND",
+                _ => throw new Exception("Undefined result")
+            };
         }
     }
 }

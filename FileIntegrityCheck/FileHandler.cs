@@ -10,7 +10,7 @@ namespace FileIntegrityCheck
 {
     public class FileHandler
     {
-        public List<Response> Check(string pathToDirectory, string pathToInputFile)
+        public List<Response> Check(string pathToInputFile,string pathToDirectory)
         {
             var options = Read(pathToInputFile);
 
