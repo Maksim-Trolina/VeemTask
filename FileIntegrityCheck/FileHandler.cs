@@ -3,88 +3,82 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
-using System.Text;
 
 
 namespace FileIntegrityCheck
 {
     public class FileHandler
     {
-        public List<Response> Check(string pathToInputFile,string pathToDirectory)
+        public Response[] CheckIntegrityFiles(string pathToInputFile, string pathToDirectory)
         {
-            var options = Read(pathToInputFile);
+            var options = ReadInputFile(pathToInputFile);
 
             return options
-                .Select(option => Check(option, pathToDirectory))
-                .ToList();
+                .Select(option => CheckIntegrityFile(option, pathToDirectory))
+                .ToArray();
         }
 
-        private List<string[]> Read(string path)
+        private List<string[]> ReadInputFile(string path)
         {
             using (var sr = new StreamReader(path))
             {
                 string line;
 
-                var output = new List<string[]>();
+                var options = new List<string[]>();
 
                 while ((line = sr.ReadLine()) != null)
                 {
-                    output.Add(line.Split(' ', StringSplitOptions.RemoveEmptyEntries));
+                    options.Add(line.Split(' ', StringSplitOptions.RemoveEmptyEntries));
                 }
 
-                return output;
+                return options;
             }
         }
 
-        private Response Check(string[] options, string pathToDirectory)
+        private Response CheckIntegrityFile(string[] options, string pathToDirectory)
         {
             if (options.Length < 3)
             {
                 throw new Exception("Invalid options");
             }
 
-            var path = pathToDirectory + options[0];
+            var fileName = options[0];
+
+            var path = pathToDirectory + fileName;
 
             if (!File.Exists(path))
             {
                 return Response.NotFound;
             }
 
-            bool isEqual;
+            var isFileIntegrity = IsFileIntegrity(path, options[1], options[2]);
 
-            var hashAlgorithm = options[1];
-
-            var hashSum = options[2];
-
-            using (var sr = new StreamReader(path))
-            {
-                var text = sr.ReadToEnd();
-
-                switch (hashAlgorithm)
-                {
-                    case "md5":
-                        var md5 = new MD5CryptoServiceProvider();
-                        isEqual = IsEqual(md5, text, hashSum);
-                        break;
-                    case "sha1":
-                        var sha1 = new SHA1CryptoServiceProvider();
-                        isEqual = IsEqual(sha1, text, hashSum);
-                        break;
-                    case "sha256":
-                        var sha256 = new SHA256CryptoServiceProvider();
-                        isEqual = IsEqual(sha256, text, hashSum);
-                        break;
-                    default:
-                        throw new Exception("No such hashing algorithm found");
-                }
-            }
-
-            return isEqual ? Response.Ok : Response.Fail;
+            return isFileIntegrity ? Response.Ok : Response.Fail;
         }
 
-        private bool IsEqual(HashAlgorithm hashAlgorithm, string text, string hashSum)
+        private bool IsFileIntegrity(string path, string hashAlgorithm, string hashSum)
         {
-            var hash = hashAlgorithm.ComputeHash(Encoding.UTF8.GetBytes(text));
+            var content = new FileStream(path, FileMode.Open);
+
+            switch (hashAlgorithm)
+            {
+                case "md5":
+                    var md5 = new MD5CryptoServiceProvider();
+                    return IsFileIntegrity(md5, content, hashSum);
+                case "sha1":
+                    var sha1 = new SHA1CryptoServiceProvider();
+                    return IsFileIntegrity(sha1, content, hashSum);
+                case "sha256":
+                    var sha256 = new SHA256CryptoServiceProvider();
+                    return IsFileIntegrity(sha256, content, hashSum);
+                default:
+                    throw new Exception("No such hashing algorithm found");
+            }
+        }
+
+        private bool IsFileIntegrity(HashAlgorithm hashAlgorithm, FileStream content, string hashSum)
+        {
+            var hash = hashAlgorithm.ComputeHash(content);
 
             return Convert.ToHexString(hash).ToLower() == hashSum;
         }

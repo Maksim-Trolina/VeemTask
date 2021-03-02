@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Linq;
+using System.IO;
 
 namespace FileIntegrityCheck
 {
@@ -14,18 +14,12 @@ namespace FileIntegrityCheck
                     throw new Exception("Invalid input");
                 }
 
-                var fileHandler = new FileHandler();
-                
-                var pathToInputFile = args[0];
-
-                var pathToDirectory = args[1];
-
-                var responses = fileHandler.Check(pathToInputFile,pathToDirectory);
+                var responses = GetResponses(args[0], args[1]);
 
                 foreach (var response in responses)
                 {
                     var message = GetMessage(response);
-                    
+
                     Console.WriteLine(message);
                 }
             }
@@ -33,6 +27,20 @@ namespace FileIntegrityCheck
             {
                 Console.WriteLine(e.Message);
             }
+        }
+
+        private static Response[] GetResponses(string pathToInputFile, string pathToDirectory)
+        {
+            if (!File.Exists(pathToInputFile))
+            {
+                throw new Exception("Not found input file");
+            }
+
+            var fileHandler = new FileHandler();
+            
+            var responses = fileHandler.CheckIntegrityFiles(pathToInputFile, pathToDirectory);
+
+            return responses;
         }
 
         private static string GetMessage(Response response)
